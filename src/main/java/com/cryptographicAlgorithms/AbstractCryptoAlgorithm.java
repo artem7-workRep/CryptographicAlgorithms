@@ -31,7 +31,6 @@ public abstract class AbstractCryptoAlgorithm implements EncryptDecryptBehavior 
         return result;
     }
 
-
     protected long dataInLongOfByteArray(byte[] data, int begin, int end) {
         StringBuilder result = new StringBuilder();
 

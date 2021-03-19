@@ -1,6 +1,9 @@
 package main.java.com.cryptographicAlgorithms.blowfish.options;
 
 import main.java.com.cryptographicAlgorithms.blowfish.AdditionKeys;
+import main.java.com.cryptographicAlgorithms.blowfish.RandomNumbers;
+
+import java.util.Arrays;
 
 public class SPbox {
     private long[] ChangedSBox0;
@@ -8,9 +11,10 @@ public class SPbox {
     private long[] ChangedSBox2;
     private long[] ChangedSBox3;
     private long[] ChangedPArray;
-    private AdditionKeys key;
+    private final AdditionKeys key;
+    private RandomNumbers randomNumbers;
 
-    private long[] sBox0 = {
+    private final long[] sBox0 = {
             0xD1310BA6L, 0x98DFB5ACL, 0x2FFD72DBL, 0xD01ADFB7L,
             0xB8E1AFEDL, 0x6A267E96L, 0xBA7C9045L, 0xF12C7F99L,
             0x24A19947L, 0xB3916CF7L, 0x0801F2E2L, 0x858EFC16L,
@@ -280,32 +284,6 @@ public class SPbox {
             0xC0AC29B7L, 0xC97C50DDL, 0x3F84D5B5L, 0xB5470917L,
             0x9216D5D9L, 0x8979FB1BL};
 
-    public SPbox(AdditionKeys key) {
-        this.key = key;
-        ChangedPArray = new long[18];
-        System.arraycopy(pArray, 0, ChangedPArray, 0, 18);
-
-        ChangedSBox0 = new long[256];
-        System.arraycopy(sBox0, 0, ChangedSBox0, 0, 256);
-
-        ChangedSBox1 = new long[256];
-        System.arraycopy(sBox1, 0, ChangedSBox1, 0, 256);
-
-        ChangedSBox2 = new long[256];
-        System.arraycopy(sBox2, 0, ChangedSBox2, 0, 256);
-
-        ChangedSBox3 = new long[256];
-        System.arraycopy(sBox3, 0, ChangedSBox3, 0, 256);
-    }
-
-    /**
-     * Метод для расширение ключей
-     */
-    public void initKey() {
-        changeParray();
-        keyExpansion();
-    }
-
     public long[] getChangedSBox0() {
         return ChangedSBox0;
     }
@@ -326,20 +304,87 @@ public class SPbox {
         return ChangedPArray;
     }
 
-    private void changeParray() {
-        char[] KeyDesireLength = key.keyToCharArray();
-        long data;
-        int j = 0;
+    /**
+     *
+     * @param key   Секретный ключ, необходимый для расширения подключей
+     *              При передаче ТОЛЬКО закрытого ключа, S и P блоки заполняются
+     *              значениями числа Pi по умолчанию (те которые определены выше).
+     */
+    public SPbox(AdditionKeys key) {
+        this.key = key;
+        ChangedPArray = new long[18];
+        System.arraycopy(pArray, 0, ChangedPArray, 0, 18);
+
+        ChangedSBox0 = new long[256];
+        System.arraycopy(sBox0, 0, ChangedSBox0, 0, 256);
+
+        ChangedSBox1 = new long[256];
+        System.arraycopy(sBox1, 0, ChangedSBox1, 0, 256);
+
+        ChangedSBox2 = new long[256];
+        System.arraycopy(sBox2, 0, ChangedSBox2, 0, 256);
+
+        ChangedSBox3 = new long[256];
+        System.arraycopy(sBox3, 0, ChangedSBox3, 0, 256);
+    }
+
+    /**
+     *
+     * @param key               Секретный ключ, необходимый для расширения подключей
+     * @param randomNumbers     Объект-реализация интерфейса. Подразумевает, что обьект
+     *                          возвращает 32-битные числа, которыми на начальном этапе
+     *                          заполняются S,P блоки
+     */
+    public SPbox(AdditionKeys key, RandomNumbers randomNumbers) {
+        this.key = key;
+        ChangedPArray = new long[18];
         for (int i = 0; i < 18; i++) {
-            data = 0L;
-            for (int k = 0; k < 4; k++) {
-                data = (data << 8) | KeyDesireLength[j];
-                j++;
-                if (j >= KeyDesireLength.length){
-                    j = 0;
-                }
-                ChangedPArray[i] = ChangedPArray[i] ^ data;
-            }
+            ChangedPArray[i] = randomNumbers.ret32BitNumber();
+        }
+        for (int i = 0; i < 256; i++) {
+            ChangedSBox0[i] = randomNumbers.ret32BitNumber();
+        }
+        for (int i = 0; i < 256; i++) {
+            ChangedSBox1[i] = randomNumbers.ret32BitNumber();
+        }
+        for (int i = 0; i < 256; i++) {
+            ChangedSBox2[i] = randomNumbers.ret32BitNumber();
+        }
+        for (int i = 0; i < 256; i++) {
+            ChangedSBox3[i] = randomNumbers.ret32BitNumber();
+        }
+    }
+
+    private String retKeyInBinaryView(char[] data) {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < 36; i++) {
+            String temp = String.format("%16s", Integer.toBinaryString(data[i])).replace(' ','0');
+            result.append(temp);
+        }
+        return result.toString();
+    }
+
+    /**
+     * Метод для расширение ключей
+     */
+    public void initKey() {
+        changeParray();
+        keyExpansion();
+    }
+
+    /**
+     * Изменение P-блоков
+     * Xor к значению P[1] и первым 32 битам ключа
+     */
+    private void changeParray() {
+        String byteOfKey             = retKeyInBinaryView(this.key.keyToCharArray());
+        int    indexStartOfByteOfKey = 0;
+        int    indexEndOfByteOfKey   = 32;
+        for (int i = 0; i < 18; i++) {
+            ChangedPArray[i] = ChangedPArray[i] ^ Long.parseLong(byteOfKey.substring(
+                    indexStartOfByteOfKey, indexEndOfByteOfKey), 2);
+            indexStartOfByteOfKey += 32;
+            indexEndOfByteOfKey += 32;
         }
     }
 

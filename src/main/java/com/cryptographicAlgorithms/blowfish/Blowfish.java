@@ -2,27 +2,34 @@ package main.java.com.cryptographicAlgorithms.blowfish;
 
 import main.java.com.cryptographicAlgorithms.AbstractCryptoAlgorithm;
 import main.java.com.cryptographicAlgorithms.blowfish.options.SPbox;
-import main.java.com.cryptographicAlgorithms.blowfish.options.SecretKey;
+import main.java.com.cryptographicAlgorithms.blowfish.options.SecretKeyForBlowfish;
 
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 
-public class Blowfish extends AbstractCryptoAlgorithm {
-    private SecretKey secretKey;
-    private SPbox sp;
+public final class Blowfish extends AbstractCryptoAlgorithm {
+    private final SPbox sp;
 
-
-    public Blowfish(SecretKey secretKey) {
-        this.secretKey = secretKey;
-        sp = new SPbox(secretKey);
+    /**
+     *
+     * @param secretKeyForBlowfish      Закрытый ключ
+     * Во время создания объекта Blowfish инициализируем (расширяем) подключи (sp.initKey())
+     */
+    public Blowfish(SecretKeyForBlowfish secretKeyForBlowfish) {
+        sp = new SPbox(secretKeyForBlowfish);
         sp.initKey();
+    }
+
+    public Blowfish(SecretKeyForBlowfish secretKeyForBlowfish, RandomNumbers randomNumbers) {
+        sp = new SPbox(secretKeyForBlowfish, randomNumbers);
     }
 
     /**
      *
      * @param OpenText  Открытый текст, который необходимо зашифровать
-     * @return          Зашифрованный текст
+     * @return          Блоки зашифрованного текста. Каждый блок имеет длину 32 бита
+     *
      */
     public String encrypt(String OpenText) {
         StringBuilder result  = new StringBuilder();
@@ -43,7 +50,7 @@ public class Blowfish extends AbstractCryptoAlgorithm {
 
     /**
      *
-     * @param EncryptText   Закрытый текст
+     * @param EncryptText   Зашифрованный текст
      * @return              Открытый текст
      */
     public String decrypt(String EncryptText) {
@@ -67,27 +74,24 @@ public class Blowfish extends AbstractCryptoAlgorithm {
         return result;
     }
 
-
     private String[] functionEnc(long dataLeft_32, long dataRight_32, SPbox sp) {
-        //left and right encrypt block
         String[] result = new String[2];
-
-        long left = dataLeft_32;
-        long right = dataRight_32;
+        long     left   = dataLeft_32;
+        long     right  = dataRight_32;
 
         for (int i = 0; i < 16; i++) {
-            left = left ^ sp.getChangedPArray()[i];
+            left  = left ^ sp.getChangedPArray()[i];
             right = methodF(left, sp) ^ right;
-            left = left + right;
+            left  = left + right;
             right = left - right;
-            left = left - right;
+            left  = left - right;
         }
-        left = left + right;
+        left  = left + right;
         right = left - right;
-        left = left - right;
+        left  = left - right;
 
         right = right ^ sp.getChangedPArray()[16];
-        left = left ^ sp.getChangedPArray()[17];
+        left  = left ^ sp.getChangedPArray()[17];
         result[0] = String.valueOf(left);
         result[1] = String.valueOf(right);
 
@@ -96,22 +100,21 @@ public class Blowfish extends AbstractCryptoAlgorithm {
 
     private String[] functionDec(long dataLeft_32, long dataRight_32, SPbox sp) {
         String[] result = new String[2];
-
-        long left = dataLeft_32;
-        long right = dataRight_32;
+        long     left   = dataLeft_32;
+        long     right  = dataRight_32;
 
         for (int i = 17; i > 1; i--) {
-            left = left ^ sp.getChangedPArray()[i];
+            left  = left ^ sp.getChangedPArray()[i];
             right = methodF(left, sp) ^ right;
-            left = left + right;
+            left  = left + right;
             right = left - right;
-            left = left - right;
+            left  = left - right;
         }
-        left = left + right;
+        left  = left + right;
         right = left - right;
-        left = left - right;
+        left  = left - right;
         right = right ^ sp.getChangedPArray()[1];
-        left = left ^ sp.getChangedPArray()[0];
+        left  = left ^ sp.getChangedPArray()[0];
 
         result[0] = String.valueOf(left);
         result[1] = String.valueOf(right);
@@ -141,7 +144,7 @@ public class Blowfish extends AbstractCryptoAlgorithm {
 
     private ArrayList<Long> BytesOfData(long left, long right) {
         var result = new ArrayList<Long>();
-        var temp1 = new ArrayList<Long>();
+        var temp1  = new ArrayList<Long>();
 
         for (int i = 0; i < 4; i++) {
             temp1.add(right & 0xFF);
@@ -157,5 +160,4 @@ public class Blowfish extends AbstractCryptoAlgorithm {
         result.addAll(temp1);
         return result;
     }
-
 }
