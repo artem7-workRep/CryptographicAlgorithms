@@ -1,46 +1,65 @@
 package main.java.com.cryptographicAlgorithms;
 
-public abstract class AbstractCryptoAlgorithm implements EncryptDecryptBehavior {
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+
+public class AbstractCryptoAlgorithm {
     EncryptDecryptBehavior encryptDecryptBehavior;
 
     public void setEncryptDecryptBehavior(EncryptDecryptBehavior encryptDecryptBehavior) {
         this.encryptDecryptBehavior = encryptDecryptBehavior;
     }
 
-    /**
-     *
-     * @param text  Принимает обычную строку
-     * @return      Байтовый массив длина которого кратна 8
-     */
-    protected byte[] StringToNecessaryByteArray(String text) {
-        byte[] result = new byte[text.length()];
-        if ((text.length() % 8) == 0) {
-            result = new byte[text.length()];
-        }
-
-        if ((text.length() % 8) != 0) {
-            int validSizeArray = text.length();
-            while ((validSizeArray % 8) != 0) {
-                validSizeArray++;
-            }
-            result = new byte[validSizeArray];
-        }
-
-        byte[] temp = text.getBytes();
-        System.arraycopy(temp, 0, result, 0, temp.length);
-        return result;
+    public String encryptMessage(String message) {
+        return encryptDecryptBehavior.encrypt(message);
     }
 
-    protected long dataInLongOfByteArray(byte[] data, int begin, int end) {
+    public String decryptMessage(String message) {
+        return encryptDecryptBehavior.decrypt(message);
+    }
+
+    public void writeInFile(String encryptData, File file) throws IOException {
+        FileWriter fw = new FileWriter(file);
+        String a = writeByte(encryptData);
+        fw.write(a);
+        fw.flush();
+    }
+
+    private String writeByte(String encryptMessage) {
         StringBuilder result = new StringBuilder();
 
-        for (int i = begin; i < end; i++) {
-            String elementOfArrayInBinary =
-                    String.format("%8s", Integer.toBinaryString(data[i])).replace(' ','0');
-            result.append(elementOfArrayInBinary);
+        String[] stringEncryptArray = encryptMessage.split(" ");
+        for(int i = 0; i < stringEncryptArray.length; i = i + 2) {
+            long bytesOfString1 = Long.parseLong(stringEncryptArray[i], 16);
+            long bytesOfString2 = Long.parseLong(stringEncryptArray[i + 1], 16);
+            result.append(longToByte(bytesOfString1));
+            result.append(longToByte(bytesOfString2));
+            result.append("\n");
         }
-        long res = Integer.parseInt(result.toString(), 2);
-        return res;
+
+        return result.toString();
     }
 
+    private String longToByte(long number) {
+        StringBuilder result = new StringBuilder();
+
+        long copyNumber = number;
+        for (int i = 0; i < 8; i++) {
+            long temp = copyNumber & 0xFF;
+            if (temp != 0) {
+                result.append(Long.toHexString(temp) + " ");
+            }else {
+                result.append("0 ");
+            }
+            copyNumber = copyNumber >> 8;
+        }
+        StringBuilder res = new StringBuilder();
+        String[] a = result.toString().split(" ");
+        for (int i = a.length - 1; i >= 0; i--) {
+            res.append(a[i] + " ");
+        }
+        return res.toString();
+    }
 }

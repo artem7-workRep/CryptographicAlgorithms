@@ -3,9 +3,7 @@ package main.java.com.cryptographicAlgorithms.blowfish.options;
 import main.java.com.cryptographicAlgorithms.blowfish.AdditionKeys;
 import main.java.com.cryptographicAlgorithms.blowfish.RandomNumbers;
 
-import java.util.Arrays;
-
-public class SPbox {
+public final class SPbox {
     private long[] ChangedSBox0;
     private long[] ChangedSBox1;
     private long[] ChangedSBox2;

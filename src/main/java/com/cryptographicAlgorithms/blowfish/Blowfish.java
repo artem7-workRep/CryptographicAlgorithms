@@ -1,6 +1,6 @@
 package main.java.com.cryptographicAlgorithms.blowfish;
 
-import main.java.com.cryptographicAlgorithms.AbstractCryptoAlgorithm;
+import main.java.com.cryptographicAlgorithms.EncryptDecryptBehavior;
 import main.java.com.cryptographicAlgorithms.blowfish.options.SPbox;
 import main.java.com.cryptographicAlgorithms.blowfish.options.SecretKeyForBlowfish;
 
@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 
-public final class Blowfish extends AbstractCryptoAlgorithm {
+public final class Blowfish implements EncryptDecryptBehavior {
     private final SPbox sp;
 
     /**
@@ -21,6 +21,12 @@ public final class Blowfish extends AbstractCryptoAlgorithm {
         sp.initKey();
     }
 
+    /**
+     *
+     * @param secretKeyForBlowfish  Закрытый ключ
+     * @param randomNumbers         Интерфейс-реализация возвращающая последовтаельность
+     *                              случайных чисел
+     */
     public Blowfish(SecretKeyForBlowfish secretKeyForBlowfish, RandomNumbers randomNumbers) {
         sp = new SPbox(secretKeyForBlowfish, randomNumbers);
     }
@@ -28,7 +34,7 @@ public final class Blowfish extends AbstractCryptoAlgorithm {
     /**
      *
      * @param OpenText  Открытый текст, который необходимо зашифровать
-     * @return          Блоки зашифрованного текста. Каждый блок имеет длину 32 бита
+     * @return          Блоки зашифрованного текста.
      *
      */
     public String encrypt(String OpenText) {
@@ -74,8 +80,48 @@ public final class Blowfish extends AbstractCryptoAlgorithm {
         return result;
     }
 
+    /**
+     *
+     * @param text  Принимает обычную строку
+     * @return      Байтовый массив длина которого кратна 8
+     */
+    private byte[] StringToNecessaryByteArray(String text) {
+        byte[] result = new byte[text.length()];
+
+        if ((text.length() % 8) == 0) {
+            result = new byte[text.length()];
+        }
+
+        if ((text.length() % 8) != 0) {
+            int validSizeArray = text.length();
+            while ((validSizeArray % 8) != 0) {
+                validSizeArray++;
+            }
+            result = new byte[validSizeArray];
+        }
+
+        byte[] temp = text.getBytes();
+        System.arraycopy(temp, 0, result, 0, temp.length);
+
+        return result;
+    }
+
+    private long dataInLongOfByteArray(byte[] data, int begin, int end) {
+        StringBuilder result = new StringBuilder();
+
+        for (int i = begin; i < end; i++) {
+            String elementOfArrayInBinary =
+                    String.format("%8s", Integer.toBinaryString(data[i])).replace(' ','0');
+            result.append(elementOfArrayInBinary);
+        }
+        long res = Integer.parseInt(result.toString(), 2);
+
+        return res;
+    }
+
     private String[] functionEnc(long dataLeft_32, long dataRight_32, SPbox sp) {
         String[] result = new String[2];
+
         long     left   = dataLeft_32;
         long     right  = dataRight_32;
 
@@ -100,6 +146,7 @@ public final class Blowfish extends AbstractCryptoAlgorithm {
 
     private String[] functionDec(long dataLeft_32, long dataRight_32, SPbox sp) {
         String[] result = new String[2];
+
         long     left   = dataLeft_32;
         long     right  = dataRight_32;
 
@@ -118,11 +165,13 @@ public final class Blowfish extends AbstractCryptoAlgorithm {
 
         result[0] = String.valueOf(left);
         result[1] = String.valueOf(right);
+
         return result;
     }
 
     private long methodF(long data, SPbox sp) {
         long result;
+
         long copyData = data;
 
         long x4 = copyData & 0xFF;
@@ -139,6 +188,7 @@ public final class Blowfish extends AbstractCryptoAlgorithm {
         result = sp.getChangedSBox0()[(int)x1] + sp.getChangedSBox1()[(int)x1];
         result = result ^ sp.getChangedSBox2()[(int)x1];
         result = result + sp.getChangedSBox3()[(int)x1];
+
         return result;
     }
 
