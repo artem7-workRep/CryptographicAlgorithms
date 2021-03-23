@@ -10,7 +10,7 @@ ____
 *Тип:* Сеть Фейстеля    
 ____
 UML-диаграмма классов
-![uml_cryptoAlg_0](https://user-images.githubusercontent.com/80464776/112059264-acfe2e00-8b6c-11eb-8e06-6b8379d3af8a.png)
+![uml_cryptoAlg_0](https://user-images.githubusercontent.com/80464776/112074370-328ed780-8b87-11eb-8f0b-d7e430ba4827.png)
 
 :white_check_mark: алгоритм Blowfish   
 :negative_squared_cross_mark:алгоритм AES   
