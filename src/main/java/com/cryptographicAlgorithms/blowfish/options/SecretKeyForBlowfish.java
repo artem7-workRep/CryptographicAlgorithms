@@ -1,41 +1,34 @@
 package main.java.com.cryptographicAlgorithms.blowfish.options;
-import main.java.com.cryptographicAlgorithms.blowfish.AdditionKeys;
+
+import main.java.com.cryptographicAlgorithms.AdditionKeys;
+
+import java.util.Arrays;
 
 public class SecretKeyForBlowfish implements AdditionKeys {
-    private final String KeyStr;
-    private final char[] keyInChar;
+    private final byte[] keyInByteArray;
 
     public SecretKeyForBlowfish(String key) {
-        KeyStr = necessaryKeyLength(key);
-        keyInChar = KeyStr.toCharArray();
+        keyInByteArray = necessaryKeyLength(key).getBytes();
     }
 
-    public String getKeyStr() {
-        return KeyStr;
-    }
-
-    private String necessaryKeyLength(String key) {
+    public String necessaryKeyLength(String key) {
         String result = null;
         StringBuilder builder = new StringBuilder(key);
 
-        if (key.length() < 36) {
-            while (builder.length() < 36) {
+        if (key.length() < 72) {
+            while (builder.length() < 72) {
                 builder.append(key);
             }
-            result = builder.toString().substring(0, 36);
+            result = builder.substring(0, 72);
             return result;
-        }else if (builder.length() >= 36) {
-            result = builder.substring(0, 36);
+        }else if (builder.length() >= 72) {
+            result = builder.substring(0, 72);
         }
-
-        System.out.println("Result = " + result);
         return result;
     }
 
     @Override
-    public char[] keyToCharArray() {
-        return keyInChar;
+    public byte[] keyInByteArray() {
+        return keyInByteArray;
     }
-
-
 }

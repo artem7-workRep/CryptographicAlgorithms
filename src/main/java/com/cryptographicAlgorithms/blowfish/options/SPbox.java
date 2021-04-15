@@ -1,6 +1,6 @@
 package main.java.com.cryptographicAlgorithms.blowfish.options;
 
-import main.java.com.cryptographicAlgorithms.blowfish.AdditionKeys;
+import main.java.com.cryptographicAlgorithms.AdditionKeys;
 import main.java.com.cryptographicAlgorithms.blowfish.RandomNumbers;
 
 public final class SPbox {
@@ -353,17 +353,17 @@ public final class SPbox {
         }
     }
 
-    private String retKeyInBinaryView(char[] data) {
+    private String retKeyInBinaryView(byte[] data) {
         StringBuilder result = new StringBuilder();
-        for (int i = 0; i < 36; i++) {
-            String temp = String.format("%16s", Integer.toBinaryString(data[i])).replace(' ','0');
+        for (int i = 0; i < 72; i++) {
+            String temp = String.format("%8s", Integer.toBinaryString(data[i])).replace(' ','0');
             result.append(temp);
         }
         return result.toString();
     }
 
     /**
-     * Метод для расширение ключей
+     * init метод для ключей
      */
     public void initKey() {
         changeParray();
@@ -372,56 +372,58 @@ public final class SPbox {
 
     /**
      * Изменение P-блоков
-     * Xor к значению P[1] и первым 32 битам ключа
+     * Применение Xor к значению P[1] с первыми 32 битами ключа (выполняется циклически)
      */
+    private void keyExpansion() {
+        long[] encryptZero64BitSequence = new long[]{0L, 0L};
+
+        for (int i = 0; i < 18; i += 2) {
+            encryptZero64BitSequence = encrypt(encryptZero64BitSequence[0], encryptZero64BitSequence[1]);
+            ChangedPArray[i] = encryptZero64BitSequence[0];
+            ChangedPArray[i + 1] = encryptZero64BitSequence[1];
+        }
+
+        for (int i = 0; i < 256; i += 2) {
+            encryptZero64BitSequence = encrypt(encryptZero64BitSequence[0], encryptZero64BitSequence[1]);
+            ChangedSBox0[i] = encryptZero64BitSequence[0];
+            ChangedSBox0[i + 1] = encryptZero64BitSequence[1];
+        }
+
+        for (int i = 0; i < 256; i += 2) {
+            encryptZero64BitSequence = encrypt(encryptZero64BitSequence[0], encryptZero64BitSequence[1]);
+            ChangedSBox1[i] = encryptZero64BitSequence[0];
+            ChangedSBox2[i + 1] = encryptZero64BitSequence[1];
+        }
+
+        for (int i = 0; i < 256; i += 2) {
+            encryptZero64BitSequence = encrypt(encryptZero64BitSequence[0], encryptZero64BitSequence[1]);
+            ChangedSBox2[i] = encryptZero64BitSequence[0];
+            ChangedSBox2[i + 1] = encryptZero64BitSequence[1];
+        }
+
+        for (int i = 0; i < 256; i += 2) {
+            encryptZero64BitSequence = encrypt(encryptZero64BitSequence[0], encryptZero64BitSequence[1]);
+            ChangedSBox3[i] = encryptZero64BitSequence[0];
+            ChangedSBox3[i + 1] = encryptZero64BitSequence[1];
+        }
+    }
+
     private void changeParray() {
-        String byteOfKey             = retKeyInBinaryView(this.key.keyToCharArray());
+        String byteOfKey = retKeyInBinaryView(this.key.keyInByteArray());
         int    indexStartOfByteOfKey = 0;
         int    indexEndOfByteOfKey   = 32;
         for (int i = 0; i < 18; i++) {
-            ChangedPArray[i] = ChangedPArray[i] ^ Long.parseLong(byteOfKey.substring(
+            long partOf32BitBey = Long.parseLong(byteOfKey.substring(
                     indexStartOfByteOfKey, indexEndOfByteOfKey), 2);
+            ChangedPArray[i] = ChangedPArray[i] ^ partOf32BitBey;
             indexStartOfByteOfKey += 32;
             indexEndOfByteOfKey += 32;
         }
     }
 
-    private void keyExpansion() {
-        long a = 0L;
-        for (int i = 0; i < 18; i += 2) {
-            a = encrypt(a);
-            ChangedPArray[i] = trim(a >>> 32);
-            ChangedPArray[i + 1] = trim(a);
-        }
-
-        for (int i = 0; i < 256; i += 2) {
-            a = encrypt(a);
-            ChangedSBox0[i] = trim(a >>> 32);
-            ChangedSBox0[i + 1] = trim(a);
-        }
-
-        for (int i = 0; i < 256; i += 2) {
-            a = encrypt(a);
-            ChangedSBox1[i] = trim(a >>> 32);
-            ChangedSBox1[i + 1] = trim(a);
-        }
-
-        for (int i = 0; i < 256; i += 2) {
-            a = encrypt(a);
-            ChangedSBox2[i] = trim(a >>> 32);
-            ChangedSBox2[i + 1] = trim(a);
-        }
-
-        for (int i = 0; i < 256; i += 2) {
-            a = encrypt(a);
-            ChangedSBox3[i] = trim(a >>> 32);
-            ChangedSBox3[i + 1] = trim(a);
-        }
-    }
-
-    private long encrypt(long plaintext) {
-        long xL = trim(plaintext >>> 32);
-        long xR = trim(plaintext);
+    private long[] encrypt(long left32Block, long right32Block) {
+        long xL = left32Block;
+        long xR = right32Block;
 
         for (int i = 0; i < 18; i++) {
             xL = xL ^ ChangedPArray[i];
@@ -436,20 +438,21 @@ public final class SPbox {
 
         xR = xR ^ ChangedPArray[16];
         xL = xL ^ ChangedPArray[17];
-        return (xL << 32) | xR;
+
+        return new long[]{xL, xR};
     }
 
-    private long F(long data) {
+    private long F(long data32Bit) {
         long result;
-        long copyData = data;
+        long copyData = data32Bit;
 
-        long x4 = copyData & 0x00FF;
+        long x4 = copyData & 0xFF;
         copyData = copyData >> 8;
 
-        long x3 = copyData & 0x00FF;
+        long x3 = copyData & 0xFF;
         copyData = copyData >> 8;
 
-        long x2 = copyData & 0x00FF;
+        long x2 = copyData & 0xFF;
         copyData = copyData >> 8;
 
         long x1 = copyData & 0x00FF;
@@ -458,10 +461,6 @@ public final class SPbox {
         result = result ^ ChangedSBox2[(int)x3];
         result = result + ChangedSBox3[(int)x4];
         return result;
-    }
-
-    private long trim(long data) {
-        return (data & 0xFFFFFFFFL);
     }
 
 }

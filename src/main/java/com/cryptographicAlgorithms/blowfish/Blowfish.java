@@ -1,6 +1,7 @@
 package main.java.com.cryptographicAlgorithms.blowfish;
 
 import main.java.com.cryptographicAlgorithms.EncryptDecryptBehavior;
+import main.java.com.cryptographicAlgorithms.FunctionsForCryptographicAlgorithms;
 import main.java.com.cryptographicAlgorithms.blowfish.options.SPbox;
 import main.java.com.cryptographicAlgorithms.blowfish.options.SecretKeyForBlowfish;
 
@@ -40,11 +41,14 @@ public final class Blowfish implements EncryptDecryptBehavior {
     public String encrypt(String OpenText) {
         StringBuilder result  = new StringBuilder();
         String encodeOpenText = Base64.getEncoder().encodeToString(OpenText.getBytes());
-        byte[] openDataInByte = StringToNecessaryByteArray(encodeOpenText);
+        byte[] openDataInByte = FunctionsForCryptographicAlgorithms.stringToNecessaryByteArray(
+                encodeOpenText, 64);
 
         for (int i = 0; i < openDataInByte.length; i += 8) {
-            long left = dataInLongOfByteArray(openDataInByte, i, i + 4);
-            long right = dataInLongOfByteArray(openDataInByte, i + 4, i + 8);
+            long left = FunctionsForCryptographicAlgorithms.dataInLongOfByteArray(
+                    openDataInByte, i, i + 4);
+            long right = FunctionsForCryptographicAlgorithms.dataInLongOfByteArray(openDataInByte,
+                    i + 4, i + 8);
 
             String[] encryptBlock = functionEnc(left, right, sp);
             result.append(Long.toHexString(Long.parseLong(encryptBlock[0])) + " "
@@ -78,45 +82,6 @@ public final class Blowfish implements EncryptDecryptBehavior {
         }
         result = new String(Base64.getDecoder().decode(decryptDataInBase64.toString().getBytes()));
         return result;
-    }
-
-    /**
-     *
-     * @param text  Принимает обычную строку
-     * @return      Байтовый массив длина которого кратна 8
-     */
-    private byte[] StringToNecessaryByteArray(String text) {
-        byte[] result = new byte[text.length()];
-
-        if ((text.length() % 8) == 0) {
-            result = new byte[text.length()];
-        }
-
-        if ((text.length() % 8) != 0) {
-            int validSizeArray = text.length();
-            while ((validSizeArray % 8) != 0) {
-                validSizeArray++;
-            }
-            result = new byte[validSizeArray];
-        }
-
-        byte[] temp = text.getBytes();
-        System.arraycopy(temp, 0, result, 0, temp.length);
-
-        return result;
-    }
-
-    private long dataInLongOfByteArray(byte[] data, int begin, int end) {
-        StringBuilder result = new StringBuilder();
-
-        for (int i = begin; i < end; i++) {
-            String elementOfArrayInBinary =
-                    String.format("%8s", Integer.toBinaryString(data[i])).replace(' ','0');
-            result.append(elementOfArrayInBinary);
-        }
-        long res = Integer.parseInt(result.toString(), 2);
-
-        return res;
     }
 
     private String[] functionEnc(long dataLeft_32, long dataRight_32, SPbox sp) {
